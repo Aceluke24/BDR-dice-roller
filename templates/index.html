@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dice Roller</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Dice Roller</h1>
+
+        <!-- Initial Roll -->
+        <form method="POST">
+            <input
+                type="number"
+                name="num_dice"
+                min="1"
+                max="20"
+                placeholder="Number of dice"
+                required
+                value="{{ num_dice }}"
+            >
+            <button type="submit" name="action" value="roll">
+                Roll Dice
+            </button>
+        </form>
+
+        <!-- Dice Display -->
+        {% if dice_images %}
+            <div class="dice-container">
+                {% for img in dice_images %}
+                    <img
+                        src="{{ url_for('static', filename='dice/' + img) }}"
+                        class="dice"
+                    >
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Bonus Roll -->
+        {% if can_bonus %}
+            <form method="POST">
+                <button
+                    type="submit"
+                    name="action"
+                    value="bonus"
+                    class="bonus-button"
+                >
+                    🎯 Roll Bonus Die
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</body>
+</html>
+
