@@ -5,9 +5,19 @@ app = Flask(__name__)
 app.secret_key = "dice_secret"
 
 
-def is_match(rolls):
-    non_six = [r for r in rolls if r != 6]
-    return len(set(non_six)) <= 1
+def get_base(rolls):
+    """Return the first non-6 number as base, or None if all 6s."""
+    for r in rolls:
+        if r != 6:
+            return r
+    return None
+
+
+def can_continue_bonus(roll, base):
+    """Return True if bonus can continue (roll matches base or is 6)."""
+    if base is None:
+        return roll == 6  # still all 6s
+    return roll == base or roll == 6
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -20,39 +30,43 @@ def index():
 
     if request.method == "POST":
         action = request.form["action"]
+        num_dice = int(request.form.get("num_dice", session.get("num_dice", 1)))
+        session["num_dice"] = num_dice
 
-        # INITIAL ROLL
+        # --- INITIAL ROLL ---
         if action == "roll":
-            num_dice = int(request.form["num_dice"])
-            session["num_dice"] = num_dice
-
             rolls = [random.randint(1, 6) for _ in range(num_dice)]
             session["rolls"] = rolls
 
-            if is_match(rolls):
+            if num_dice == 1:
+                # Single die: bonus only if first roll is 6
+                if rolls[0] == 6:
+                    session["base"] = None  # base not known yet
+                    session["can_bonus"] = True
+                else:
+                    session["base"] = rolls[0]
+                    session["can_bonus"] = False
+            else:
+                # Multi-dice: original match logic
                 non_six = [r for r in rolls if r != 6]
                 session["base"] = non_six[0] if non_six else None
-                session["can_bonus"] = True
-            else:
-                session["base"] = None
-                session["can_bonus"] = False
+                session["can_bonus"] = len(set(non_six)) <= 1
 
-        # BONUS ROLL
-        elif action == "bonus":
+        # --- BONUS ROLL ---
+        elif action == "bonus" and session.get("can_bonus", False):
             bonus = random.randint(1, 6)
             session["rolls"].append(bonus)
 
-            # All-6s case: first non-6 sets base
-            if session["base"] is None and bonus != 6:
+            # Determine base if it wasn't set yet
+            if session["num_dice"] == 1 and session["base"] is None and bonus != 6:
                 session["base"] = bonus
-                session["can_bonus"] = True
 
-            # Continue match
-            elif bonus == session["base"] or bonus == 6:
-                session["can_bonus"] = True
-
+            # Can continue bonus?
+            if session["num_dice"] == 1:
+                session["can_bonus"] = can_continue_bonus(bonus, session["base"])
             else:
-                session["can_bonus"] = False
+                # Multi-dice: bonus continues if matches base or 6
+                session["can_bonus"] = can_continue_bonus(bonus, session["base"])
 
     dice_images = [f"dice{r}.png" for r in session["rolls"]]
 

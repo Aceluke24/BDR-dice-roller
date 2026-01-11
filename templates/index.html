@@ -8,8 +8,15 @@
     <div class="container">
         <h1>🎲 Dice Roller</h1>
 
+        <!-- Display current base -->
+        {% if base_number %}
+            <div class="base-display">
+                <strong>Current Base:</strong> {{ base_number }}
+            </div>
+        {% endif %}
+
         <!-- Initial Roll -->
-        <form method="POST">
+        <form method="POST" class="roll-form">
             <input
                 type="number"
                 name="num_dice"
@@ -19,7 +26,7 @@
                 required
                 value="{{ num_dice }}"
             >
-            <button type="submit" name="action" value="roll">
+            <button type="submit" name="action" value="roll" class="roll-button">
                 Roll Dice
             </button>
         </form>
@@ -30,7 +37,7 @@
                 {% for img in dice_images %}
                     <img
                         src="{{ url_for('static', filename='dice/' + img) }}"
-                        class="dice"
+                        class="dice {% if img[4] == base_number|string %}highlight{% endif %}"
                     >
                 {% endfor %}
             </div>
@@ -50,6 +57,35 @@
             </form>
         {% endif %}
     </div>
+
+    <!-- JavaScript to handle Enter key and auto-focus -->
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const numInput = document.querySelector('input[name="num_dice"]');
+        const rollButton = document.querySelector('button[name="action"][value="roll"]');
+
+        // Automatically focus the number input
+        if (numInput) numInput.focus();
+
+        // Handle Enter key for both initial and bonus rolls
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault(); // prevent default form submit
+                const bonusButton = document.querySelector('.bonus-button');
+
+                if (bonusButton) {
+                    bonusButton.click();
+                } else if (rollButton) {
+                    rollButton.click();
+                }
+
+                if (numInput) {
+                    numInput.focus();
+                    numInput.select();
+                }
+            }
+        });
+    });
+    </script>
 </body>
 </html>
-
