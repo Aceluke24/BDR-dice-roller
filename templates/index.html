@@ -3,15 +3,26 @@
 <head>
     <title>Dice Roller</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .crest-watermark {
+            background-image: url("{{ url_for('static', filename='crest.jpg') }}");
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
+    <div class="page-wrapper">
+        <!-- Heraldic Crest Side Panel -->
+        <div class="crest-panel">
+            <img src="{{ url_for('static', filename='crest.jpg') }}" alt="Family Crest" class="crest-image">
+        </div>
+        
+        <div class="container">
         <h1>🎲 Dice Roller</h1>
 
-        <!-- Display current base -->
-        {% if base_number %}
+        <!-- Display match score -->
+        {% if match_count > 0 %}
             <div class="base-display">
-                <strong>Current Base:</strong> {{ base_number }}
+                Match Score: {{ match_count }}
             </div>
         {% endif %}
 
@@ -31,14 +42,21 @@
             </button>
         </form>
 
-        <!-- Dice Display -->
-        {% if dice_images %}
-            <div class="dice-container">
-                {% for img in dice_images %}
-                    <img
-                        src="{{ url_for('static', filename='dice/' + img) }}"
-                        class="dice {% if img[4] == base_number|string %}highlight{% endif %}"
-                    >
+        <!-- Dice Display (grouped) -->
+        {% if grouped_dice %}
+            <div class="dice-display-area">
+                {% for die_value, dice_images in grouped_dice %}
+                    <div class="dice-group">
+                        <div class="dice-container">
+                            {% for img in dice_images %}
+                                <img
+                                    src="{{ url_for('static', filename='dice/' + img) }}"
+                                    class="dice {% if die_value == base_number %}highlight{% endif %}"
+                                    alt="Dice showing {{ die_value }}"
+                                >
+                            {% endfor %}
+                        </div>
+                    </div>
                 {% endfor %}
             </div>
         {% endif %}
@@ -52,7 +70,7 @@
                     value="bonus"
                     class="bonus-button"
                 >
-                    🎯 Match! Roll Another
+                    🎯 Roll Bonus Die
                 </button>
             </form>
         {% endif %}

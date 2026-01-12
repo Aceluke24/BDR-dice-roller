@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, session
 import random
+from collections import Counter
 
 app = Flask(__name__)
 app.secret_key = "dice_secret"
@@ -18,6 +19,14 @@ def can_continue_bonus(roll, base):
     if base is None:
         return roll == 6  # still all 6s
     return roll == base or roll == 6
+
+
+def calculate_scores(rolls):
+    """Calculate match scores for each die value."""
+    counts = Counter(rolls)
+    # Sort by count (descending), then by die value (descending)
+    sorted_counts = sorted(counts.items(), key=lambda x: (-x[1], -x[0]))
+    return sorted_counts
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -47,9 +56,14 @@ def index():
                     session["base"] = rolls[0]
                     session["can_bonus"] = False
             else:
-                # Multi-dice: original match logic
+                # Multi-dice: base is the most common non-6 number
                 non_six = [r for r in rolls if r != 6]
-                session["base"] = non_six[0] if non_six else None
+                if non_six:
+                    # Find the most common non-6 number
+                    counts = Counter(non_six)
+                    session["base"] = counts.most_common(1)[0][0]
+                else:
+                    session["base"] = None
                 session["can_bonus"] = len(set(non_six)) <= 1
 
         # --- BONUS ROLL ---
@@ -68,15 +82,39 @@ def index():
                 # Multi-dice: bonus continues if matches base or 6
                 session["can_bonus"] = can_continue_bonus(bonus, session["base"])
 
-    dice_images = [f"dice{r}.png" for r in session["rolls"]]
+    # Group dice by value for display
+    grouped_dice = {}
+    for roll in session["rolls"]:
+        if roll not in grouped_dice:
+            grouped_dice[roll] = []
+        grouped_dice[roll].append(f"dice{roll}.png")
+    
+    # Sort groups: by count (descending), then by value (descending)
+    sorted_groups = sorted(grouped_dice.items(), 
+                          key=lambda x: (-len(x[1]), -x[0]))
+    
+    # Calculate matching dice count (base number + sixes)
+    match_count = 0
+    if session["rolls"]:
+        if session["base"] is not None:
+            match_count = sum(1 for r in session["rolls"] if r == session["base"] or r == 6)
+        else:
+            # All sixes case
+            match_count = sum(1 for r in session["rolls"] if r == 6)
 
     return render_template(
         "index.html",
-        dice_images=dice_images,
+        grouped_dice=sorted_groups,
         can_bonus=session["can_bonus"],
-        num_dice=session["num_dice"]
+        num_dice=session["num_dice"],
+        base_number=session["base"],
+        match_count=match_count
     )
 
 
+# if __name__ == "__main__":
+#     app.run(debug=False, host='0.0.0.0')
+
+
 if __name__ == "__main__":
-    app.run(debug=False, host='0.0.0.0')
+    app.run(debug=True, host="0.0.0.0", port=5001)
