@@ -75,6 +75,7 @@
             </form>
         {% endif %}
     </div>
+    </div>
 
     <!-- JavaScript to handle Enter key and auto-focus -->
     <script>
@@ -82,8 +83,13 @@
         const numInput = document.querySelector('input[name="num_dice"]');
         const rollButton = document.querySelector('button[name="action"][value="roll"]');
 
-        // Automatically focus the number input
-        if (numInput) numInput.focus();
+        // Automatically focus and select all text in the input
+        if (numInput) {
+            setTimeout(() => {
+                numInput.focus();
+                numInput.select();
+            }, 10);
+        }
 
         // Handle Enter key for both initial and bonus rolls
         document.addEventListener("keydown", (e) => {
@@ -98,8 +104,10 @@
                 }
 
                 if (numInput) {
-                    numInput.focus();
-                    numInput.select();
+                    setTimeout(() => {
+                        numInput.focus();
+                        numInput.select();
+                    }, 10);
                 }
             }
         });
